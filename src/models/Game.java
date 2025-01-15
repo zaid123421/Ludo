@@ -1,24 +1,22 @@
 package models;
 
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 
 public class Game {
     Board board;
     private Dice dice;
     Player[] players;
     private Scanner scanner;
-    int roll;
 
     public Game() {
         board = new Board(dice);
         dice = new Dice();
         scanner = new Scanner(System.in);
         players = new Player[4];
-        players[0] = new Player("Yellow Player", 'y');
-        players[1] = new Player("Red Player", 'r');
-        players[2] = new Player("Blue Player", 'b');
-        players[3] = new Player("Green Player", 'g');
+        players[0] = new Player("🟡 Yellow Player", 'y');
+        players[1] = new Player("🔴 Red Player", 'r');
+        players[2] = new Player("🔵 Blue Player", 'b');
+        players[3] = new Player("🟢 Green Player", 'g');
     }
 
     public void startGame() {
@@ -34,52 +32,74 @@ public class Game {
 
     void play() {
         boolean gameRunning = true;
+        Queue<Integer> diceRolls = new LinkedList<>();
         int currentPlayer = 0;
+
 
         while (gameRunning) {
             Player player = players[currentPlayer];
             System.out.println();
             System.out.println(player.getName() + "'s turn!");
             boolean turnActive = true;
-             roll = 0;
+            boolean pawnActivated = false;
 
             while (turnActive) {
-                System.out.println("Press D to roll the dice.");
-                String input = scanner.next();
-                if (input.equalsIgnoreCase("D")) {
-                    roll = dice.roll();
-                    dice.displayRoll(roll);
-
-                    if (player.getPawnsInHome() > 0) {
-                        if (roll == 6) {
-                            System.out.println("You rolled a 6! You can activate a pawn.");
-                            handleMove(player, true);
-                        } else {
-                            System.out.println("You need a 6 to activate a pawn. Try again on your next turn.");
+                while (diceRolls.isEmpty()) {
+                    System.out.println("Press D to roll the dice.");
+                    String input = scanner.next();
+                    if (input.equalsIgnoreCase("D")) {
+                        int roll = dice.roll();
+                        dice.displayRoll(roll);
+                        diceRolls.add(roll);
+                        if (roll != 6) {
                             turnActive = false;
+                        }
+                        while (roll == 6 && diceRolls.size() <= 3) {
+                            System.out.println("You rolled a 6! Roll again.");
+                            System.out.println("Press D to roll again.");
+                            input = scanner.next();
+                            if (input.equalsIgnoreCase("D")) {
+                                int newRoll = dice.roll();
+                                dice.displayRoll(newRoll);
+                                diceRolls.add(newRoll);
+
+                                System.out.println("------------" + diceRolls);
+                                if (newRoll != 6) {
+                                    turnActive = false;
+                                    break;
+                                }
+                            } else {
+                                System.out.println("Invalid input. Ending your turn.");
+                                turnActive = false;
+                            }
                         }
                     } else {
-                        if (roll == 6) {
-                            System.out.println("You rolled a 6! You can move a pawn and roll again.");
-                            handleMove(player, true);
-                        } else {
-                            System.out.println("Move your pawn " + roll + " steps.");
-                            handleMove(player, false);
-                            turnActive = false;
+                        System.out.println("Invalid input. Please press D to roll the dice.");
+                        continue;
+                    }
+                }
+                while (!diceRolls.isEmpty()) {
+                    int roll1 = diceRolls.poll();
+                    if (player.getPawnsInHome() > 0) {
+                        if (roll1 == 6) {
+                            System.out.println("You can activate a pawn.");
+                            handleMove(player, true, 0);
+                            pawnActivated = true;
+                        } else if (pawnActivated) {
+                            System.out.println("You rolled a " + roll1 + ". Moving the activated pawn.");
+                            handleMove(player, false, roll1);
                         }
+                    } else {
+                        System.out.println("You need a 6 to activate a pawn. Try again on your next turn.");
                     }
-                    if (roll != 6) {
-                        turnActive = false;
-                    }
-                } else {
-                    System.out.println("Invalid input. Please press D to roll the dice.");
+
                 }
             }
             currentPlayer = (currentPlayer + 1) % 4;
         }
     }
 
-    void handleMove(Player player, boolean canActivate) {
+    void handleMove(Player player, boolean canActivate, int steps) {
         System.out.println("Select a pawn to move (1-4):");
         int pawnIndex = scanner.nextInt() - 1;
         if (pawnIndex < 0 || pawnIndex >= 4) {
@@ -91,9 +111,10 @@ public class Game {
             board.placePawn(selectedPawn, getStartingPosition(player.getColor()));
             player.removeFromHome();
             board.printWithEmojis();
-        } else if (selectedPawn.isActive()) {
-            System.out.println("Enter the number of steps to move:");
-            movePawn(selectedPawn, (byte) roll);
+        } else if (selectedPawn.isActive() && !canActivate) {
+            movePawn(selectedPawn, (byte) steps);
+            board.printWithEmojis();
+
         }
     }
 

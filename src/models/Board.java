@@ -80,7 +80,7 @@ public class Board {
                         case 'r' -> System.out.print("🔴");
                         case 'g' -> System.out.print("🟢");
                     }
-                System.out.print("\t");
+                    System.out.print("\t");
                 } else System.out.print("\t");
             }
             System.out.println();
@@ -95,19 +95,13 @@ public class Board {
         pawn.setPosition(newPosition);
         board[newPosition.getX()][newPosition.getY()] = pawn;
     }
+
     public void placePawn(Pawn pawn, Position startPosition) {
         Position currentPosition = pawn.getPosition();
-        if (currentPosition != null) {
-            board[currentPosition.getX()][currentPosition.getY()] = new Cell(currentPosition.getX(), currentPosition.getY(), false, false, '-');
-        }
-        pawn.isActive();
+        board[currentPosition.getX()][currentPosition.getY()] = new Cell(currentPosition.getX(), currentPosition.getY(), false, false, '-');
         pawn.setActive(startPosition);
         board[startPosition.getX()][startPosition.getY()] = pawn;
-
     }
-
-
-
 
 
 }
