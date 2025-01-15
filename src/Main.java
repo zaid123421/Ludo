@@ -1,9 +1,12 @@
-import models.Board;
+import models.*;
 
 public class Main {
     public static void main(String[] args) {
-        Board board = new Board();
-        board.initializeBoard();
-        board.printWithEmojis();
+        Dice dice = new Dice();
+        Board board = new Board(dice);
+        Game game = new Game();
+        game.startGame();
+
+
     }
 }
